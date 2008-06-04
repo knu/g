@@ -213,7 +213,7 @@ main () {
             -name \*.orig -o -name \*.rej -o -name \*.del-\* -o -name \*.a -o \
             -name \*.olb -o -name \*.o -o -name \*.obj -o -name \*.so -o \
             -name \*.exe -o -name \*.Z -o -name \*.elc -o -name \*.ln -o \
-            -name core -o -name .svn -o -name .git -name .bzr -name .hg \
+            -name core -o -name .svn -o -name .git -o -name .bzr -o -name .hg \
             \) -prune \)'" $FIND_EXCLUDE_ARGS"
     fi
 
