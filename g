@@ -55,6 +55,8 @@ else
     EXCLUDE_CVS=
 fi
 
+type local >/dev/null 2>&1 || alias local=:
+
 trap 'echo "g: error in find(1)." >&2; exit 2' USR1
 
 usage () {
