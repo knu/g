@@ -58,10 +58,10 @@ local () {
     for __arg__; do
         case "$__arg__" in
             *'='*)
-                eval "$(sh_escape "$__arg__")"
+                eval "set $(sh_escape "$__arg__")"
                 ;;
             *)
-                eval "$(sh_escape "$__arg__")="
+                eval "set $(sh_escape "$__arg__")="
                 ;;
         esac
     done
@@ -169,32 +169,25 @@ parse_opts () {
 
 sh_escape () {
     case "$*" in
-        '='*)
-            printf "\\%s" "$(sh_escape_all "$@")"
-            ;;
-        *[!A-Za-z0-9_.,:/@\=-]*)
-            sh_escape_all "$@"
+        *[!A-Za-z0-9_.,:/@-]*)
+            awk '
+                BEGIN {
+                    n = ARGC - 1
+                    for (i = 1; i <= n; i++) {
+                        s = ARGV[i]
+                        gsub(/[^\nA-Za-z0-9_.,:\/@-]/, "\\\\&", s)
+                        gsub(/\n/, "\"\n\"", s)
+                        printf "%s", s
+                        if (i != n) printf " "
+                    }
+                    exit 0
+                }
+                ' "$@"
             ;;
         *)
             printf '%s' "$*" 
             ;;
     esac
-}
-
-sh_escape_all () {
-    awk '
-        BEGIN {
-            n = ARGC - 1
-            for (i = 1; i <= n; i++) {
-                s = ARGV[i]
-                gsub(/[^\nA-Za-z0-9_.,:\/@=-]/, "\\\\&", s)
-                gsub(/\n/, "\"\n\"", s)
-                printf "%s", s
-                if (i != n) printf " "
-            }
-            exit 0
-        }
-        ' "$@"
 }
 
 exec_find () {
