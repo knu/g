@@ -2,7 +2,7 @@
 #
 # g - a wrapper around grep(1)
 #
-# Copyright (c) 2007 Akinori MUSHA
+# Copyright (c) 2007, 2008, 2009 Akinori MUSHA
 #
 # All rights reserved.
 #
@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.3.0"
+VERSION="0.4.0"
 
 GREP_CMD='grep'
 GREP_ARGS=''
@@ -40,11 +40,9 @@ GREP_AOPTS='A:B:C:D:d:e:f:m:-:'
 GREP_BOPTS='EFGHIJLPRUVZabchilnoqrsuvwxz'
 N_GREP_OPTS=0
 
-FIND_CMD='find'
-FIND_EXCLUDE_ARGS=''
-FIND_INCLUDE_ARGS=''
-FIND_BEFORE_ARGS=''
-FIND_AFTER_ARGS='-print0'
+F_CMD='f'
+F_BEFORE_ARGS=''
+F_AFTER_ARGS=''
 
 XARGS_CMD='xargs'
 XARGS_ARGS='-0'
@@ -55,7 +53,19 @@ else
     EXCLUDE_CVS=
 fi
 
-type local >/dev/null 2>&1 || alias local=:
+type local >/dev/null 2>&1 || \
+local () {
+    for __arg__; do
+        case "$__arg__" in
+            *'='*)
+                eval "$(sh_escape "$__arg__")"
+                ;;
+            *)
+                eval "$(sh_escape "$__arg__")="
+                ;;
+        esac
+    done
+}
 
 trap 'echo "g: error in find(1)." >&2; exit 2' USR1
 
@@ -65,7 +75,7 @@ usage () {
         echo "usage: $MYNAME { g_flags | grep_flags } [ { file | directory } ... ]"
         echo ""
         echo "g flags:"
-        if [ -n "$EXCLUDE_CVS" ]; then
+        if [ "$EXCLUDE_CVS" = t ]; then
             echo "    --no-cvs-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
             echo "        uninteresting files in the same way rsync --cvs-exclude does."
@@ -88,30 +98,29 @@ usage () {
 }
 
 parse_opts () {
-    local opt_pattern opt_exptype arg
-    local OPTIND OPTARG OPTERR
+    local opt_pattern opt_exptype opt arg
 
     if [ "$#" -eq 0 ]; then
         usage
     fi
 
-    while getopts "$GREP_AOPTS$GREP_BOPTS" o; do
-        case "$o" in
+    while getopts "$GREP_AOPTS$GREP_BOPTS" opt; do
+        case "$opt" in
             ["$GREP_BOPTS"])
-                case "$o" in
+                case "$opt" in
                     [EFP])
                         opt_exptype=t
                         ;;
                 esac
 
-                GREP_ARGS="$GREP_ARGS $(sh_escape "-$o")"
+                GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt")"
                 ;;
             [?:])
                 # cause error
                 usage
                 ;;
             *)
-                case "$o" in
+                case "$opt" in
                     e)
                         opt_pattern=t
                         ;;
@@ -131,31 +140,18 @@ parse_opts () {
                                 EXCLUDE_CVS=
                                 continue
                                 ;;
-                            "include="*)
-                                if [ -z "$FIND_INCLUDE_ARGS" ]; then
-                                    FIND_INCLUDE_ARGS="-type f -name $(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"
-                                else
-                                    FIND_INCLUDE_ARGS="$FIND_INCLUDE_ARGS -o -type f -name $(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"
-                                fi
-                                continue
-                                ;;
-                            "exclude="*)
-                                FIND_EXCLUDE_ARGS="$FIND_EXCLUDE_ARGS '!' '(' -type f -name $(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")") ')'"
-                                continue
-                                ;;
-                            "exclude-dir="*)
-                                FIND_EXCLUDE_ARGS="'!' '(' '(' -type d -name $(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")") ')' -prune ')' $FIND_EXCLUDE_ARGS"
-                                continue
+                            "include="*|"exclude="*|"exclude-dir="*)
+                                F_BEFORE_ARGS="$F_BEFORE_ARGS $(sh_escape "-$opt$OPTARG")"
                                 ;;
                             "find-expr="*)
-                                FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS '(' $(sh_escape $(expr "$OPTARG" : "[^=]*=\(.*\)")) ')'"
+                                F_AFTER_ARGS="$F_AFTER_ARGS '(' $(sh_escape $(expr "$OPTARG" : "[^=]*=\(.*\)")) ')'"
                                 continue
                                 ;;
                         esac
                         ;;
                 esac
 
-                GREP_ARGS="$GREP_ARGS $(sh_escape "-$o$OPTARG")"
+                GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt$OPTARG")"
                 ;;
         esac
     done
@@ -173,20 +169,11 @@ parse_opts () {
 
 sh_escape () {
     case "$*" in
-        *[!A-Za-z0-9_.,:/@-]*)
-            awk '
-                BEGIN {
-                    n = ARGC - 1
-                    for (i = 1; i <= n; i++) {
-                        s = ARGV[i]
-                        gsub(/[^\nA-Za-z0-9_.,:\/@-]/, "\\\\&", s)
-                        gsub(/\n/, "\"\n\"", s)
-                        printf "%s", s
-                        if (i != n) printf " "
-                    }
-                    exit 0
-                }
-                ' "$@"
+        '='*)
+            printf "\\%s" "$(sh_escape_all "$@")"
+            ;;
+        *[!A-Za-z0-9_.,:/@\=-]*)
+            sh_escape_all "$@"
             ;;
         *)
             printf '%s' "$*" 
@@ -194,10 +181,26 @@ sh_escape () {
     esac
 }
 
+sh_escape_all () {
+    awk '
+        BEGIN {
+            n = ARGC - 1
+            for (i = 1; i <= n; i++) {
+                s = ARGV[i]
+                gsub(/[^\nA-Za-z0-9_.,:\/@=-]/, "\\\\&", s)
+                gsub(/\n/, "\"\n\"", s)
+                printf "%s", s
+                if (i != n) printf " "
+            }
+            exit 0
+        }
+        ' "$@"
+}
+
 exec_find () {
     local args
 
-    eval "$(sh_escape "$FIND_CMD") $(sh_escape "$@") $FIND_BEFORE_ARGS -type f $FIND_AFTER_ARGS" || kill -USR1 $$
+    eval "$(sh_escape "$F_CMD") $F_BEFORE_ARGS $(sh_escape "$@") $F_AFTER_ARGS -type f -print0" || kill -USR1 $$
     exit
 }
 
@@ -205,25 +208,9 @@ main () {
     parse_opts "$@"
     shift "$N_GREP_OPTS"
 
-    if [ -n "$EXCLUDE_CVS" ]; then
-        FIND_EXCLUDE_ARGS='\! \( \( \
-            -name RCS -o -name SCCS -o -name CVS -o -name CVS.adm -o \
-            -name RCSLOG -o -name cvslog.\* -o -name tags -o -name TAGS -o \
-            -name .make.state -o -name .nse_depinfo -o -name \*\~ -o \
-            -name \#\* -o -name .\#\* -o -name ,\* -o -name _\$\* -o \
-            -name \*\$ -o -name \*.old -o -name \*.bak -o -name \*.BAK -o \
-            -name \*.orig -o -name \*.rej -o -name \*.del-\* -o -name \*.a -o \
-            -name \*.olb -o -name \*.o -o -name \*.obj -o -name \*.so -o \
-            -name \*.exe -o -name \*.Z -o -name \*.elc -o -name \*.ln -o \
-            -name core -o -name .svn -o -name .git -o -name .bzr -o -name .hg \
-            \) -prune \)'" $FIND_EXCLUDE_ARGS"
+    if [ "$EXCLUDE_CVS" != t ]; then
+        F_BEFORE_ARGS="$F_BEFORE_ARGS --no-cvs-exclude"
     fi
-
-    if [ -n "$FIND_INCLUDE_ARGS" ]; then
-        FIND_INCLUDE_ARGS='\( '"$FIND_INCLUDE_ARGS"' \)'
-    fi
-
-    FIND_BEFORE_ARGS="$FIND_EXCLUDE_ARGS $FIND_BEFORE_ARGS $FIND_INCLUDE_ARGS"
 
     if [ "$#" -eq 0 ]; then
         if [ -t 0 ]; then
