@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# g - a wrapper around grep(1)
+# g - a wrapper around grep(1) that uses f(1)
 #
 # Copyright (c) 2007, 2008, 2009 Akinori MUSHA
 #
@@ -71,7 +71,7 @@ trap 'echo "g: error in find(1)." >&2; exit 2' USR1
 
 usage () {
     {
-        echo "g version $VERSION - a wrapper around grep(1)"
+        echo "g version $VERSION - a wrapper around grep(1) that uses f(1)"
         echo "usage: $MYNAME { g_flags | grep_flags } [ { file | directory } ... ]"
         echo ""
         echo "g flags:"
