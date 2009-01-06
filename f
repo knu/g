@@ -51,7 +51,11 @@ main () {
 
     parse_args "$@" || exit
 
-    eval "$FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_$FIND_AFTER_ARGS"
+    if [ "$DEBUG" = t ]; then
+        info "executing the following command:
+	$FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_$FIND_AFTER_ARGS"
+    fi
+    eval "exec $FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_$FIND_AFTER_ARGS"
 }
 
 usage () {
@@ -125,7 +129,7 @@ parse_opts () {
 
     # ones after -P are FreeBSD extensions and ones after -r are GNU
     # extensions.
-    while getopts "HLPEXdfsxr-:" opt >/dev/null 2>&1; do
+    while getopts "HLPEXdfsx-:" opt >/dev/null 2>&1; do
         case "$opt" in
             [?:])
                 break
@@ -138,6 +142,9 @@ parse_opts () {
                     help)
                         echo usage
                         return
+                        ;;
+                    debug)
+                        echo DEBUG=t
                         ;;
                     cvs-exclude)
                         echo EXCLUDE_CVS=t
@@ -317,7 +324,6 @@ parse_args () {
 
     case "$FIND_TYPE" in
         GNU)
-            FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS -r"
             ;;
         FreeBSD)
             : "${FIND_TARGETS:=" ."}"
