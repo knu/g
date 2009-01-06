@@ -120,13 +120,12 @@ initialize () {
 
 parse_opts () {
     local opt
-    local OPTERR=0
 
     echo 'local find_exclude_args find_include_args'
 
     # ones after -P are FreeBSD extensions and ones after -r are GNU
     # extensions.
-    while getopts "HLPEXdfsxr-:" opt; do
+    while getopts "HLPEXdfsxr-:" opt >/dev/null 2>&1; do
         case "$opt" in
             [?:])
                 break
@@ -201,9 +200,6 @@ parse_opts () {
     '
 
     echo "shift $(($OPTIND - 1))"
-
-    # For those shells that do not have a native "local"
-    OPTERR=1
 }
 
 parse_args () {
