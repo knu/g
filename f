@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.1.0"
+VERSION="0.1.1"
 
 type local >/dev/null 2>&1 || \
 local () {
@@ -174,14 +174,14 @@ parse_opts () {
                         ;;
                     *)
                         echo '
-                        FIND_AFTER_ARGS="$FIND_AFTER_ARGS '"$(sh_escape "-$opt$OPTARG")"'"
+                        FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS '"$(sh_escape "-$opt$OPTARG")"'"
                         '
                         ;;
                 esac
                 ;;
             *)
                 echo '
-                FIND_AFTER_ARGS="$FIND_AFTER_ARGS '"$(sh_escape "-$opt$OPTARG")"'"
+                FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS '"$(sh_escape "-$opt$OPTARG")"'"
                 '
                 ;;
         esac
