@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.4.0"
+VERSION="0.4.2"
 
 GREP_CMD='grep'
 GREP_ARGS=''
@@ -142,6 +142,7 @@ parse_opts () {
                                 ;;
                             "include="*|"exclude="*|"exclude-dir="*)
                                 F_BEFORE_ARGS="$F_BEFORE_ARGS $(sh_escape "-$opt$OPTARG")"
+                                continue
                                 ;;
                             "find-expr="*)
                                 F_AFTER_ARGS="$F_AFTER_ARGS '(' $(sh_escape $(expr "$OPTARG" : "[^=]*=\(.*\)")) ')'"
