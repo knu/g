@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 type local >/dev/null 2>&1 || \
 local () {
@@ -54,9 +54,9 @@ main () {
 
     if [ "$DEBUG" = t ]; then
         info "executing the following command:
-	$FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_$FIND_AFTER_ARGS"
+	$FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_AFTER_ARGS"
     fi
-    eval "exec $FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_$FIND_AFTER_ARGS"
+    eval "exec $FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_AFTER_ARGS"
 }
 
 usage () {
@@ -78,7 +78,9 @@ usage () {
         echo "    --exclude-dir=PATTERN"
         echo "        Ignore directories matching PATTERN."
         echo "    --include=PATTERN"
-        echo "        Only search files matching PATTERN."
+        echo "        Do not ignore files matching PATTERN."
+        echo "    --include-dir=PATTERN"
+        echo "        Do not ignore directories matching PATTERN."
         echo "    --help"
         echo "        Show this help and exit."
     } >&2
@@ -156,9 +158,18 @@ parse_opts () {
                     "include="*)
                         echo '
                         if [ -z "$find_include_args" ]; then
-                            find_include_args=" -type f -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"'"
+                            find_include_args=" \( -type f -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"' \)"
                         else
-                            find_include_args="$find_include_args -o -type f -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"'"
+                            find_include_args="$find_include_args -o \( -type f -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"' \)"
+                        fi
+                        '
+                        ;;
+                    "include-dir="*)
+                        echo '
+                        if [ -z "$find_include_args" ]; then
+                            find_include_args=" \( -type d -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"' \)"
+                        else
+                            find_include_args="$find_include_args -o \( -type d -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"' \)"
                         fi
                         '
                         ;;
@@ -169,7 +180,7 @@ parse_opts () {
                         ;;
                     "exclude-dir="*)
                         echo '
-                        find_exclude_args=" \! \( \( -type d -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"' \) -prune \) $find_exclude_args"
+                        find_exclude_args=" \! \( \( -type d -name '"$(sh_escape "$(expr "$OPTARG" : "[^=]*=\(.*\)")")"' \) -prune \)$find_exclude_args"
                         '
                         ;;
                     *)
@@ -199,12 +210,15 @@ parse_opts () {
             -name \*.olb -o -name \*.o -o -name \*.obj -o -name \*.so -o \
             -name \*.exe -o -name \*.Z -o -name \*.elc -o -name \*.ln -o \
             -name core -o -name .svn -o -name .git -o -name .bzr -o -name .hg \
-            \) -prune \)'\''" $find_exclude_args"
+            \) -prune \)'\''"$find_exclude_args"
     fi
-    if [ -n "$find_include_args" ]; then
-        find_include_args='\'' \( '\''"$find_include_args"'\'' \)'\''
+    if [ -n "$find_exclude_args" ]; then
+        if [ -n "$find_include_args" ]; then
+            FIND_AFTER_ARGS='\'' \( \('\''"$find_include_args"'\'' \) -o \('\''"$find_exclude_args"'\'' \) \) '\''"$FIND_AFTER_ARGS"
+        else
+           FIND_AFTER_ARGS='\'' \('\''"$find_exclude_args"'\'' \)'\''"$FIND_AFTER_ARGS"
+        fi
     fi
-    FIND_AFTER_ARGS="$find_exclude_args$FIND_AFTER_ARGS$find_include_args"
     '
 
     echo "shift $(($OPTIND - 1))"

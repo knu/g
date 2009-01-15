@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.4.2"
+VERSION="0.4.3"
 
 GREP_CMD='grep'
 GREP_ARGS=''
@@ -90,7 +90,9 @@ usage () {
         echo "    --find-expr=EXPR"
         echo "        Specify expressions to pass to find(1)."
         echo "    --include=PATTERN"
-        echo "        Only search files matching PATTERN."
+        echo "        Do not ignore files matching PATTERN."
+        echo "    --include-dir=PATTERN"
+        echo "        Do not ignore directories matching PATTERN."
         echo "    --help"
         echo "        Show this help and exit."
     } >&2
@@ -140,7 +142,7 @@ parse_opts () {
                                 EXCLUDE_CVS=
                                 continue
                                 ;;
-                            "include="*|"exclude="*|"exclude-dir="*)
+                            "include="*|"include-dir="*|"exclude="*|"exclude-dir="*)
                                 F_BEFORE_ARGS="$F_BEFORE_ARGS $(sh_escape "-$opt$OPTARG")"
                                 continue
                                 ;;
