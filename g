@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.4.2"
+VERSION="0.4.3"
 
 GREP_CMD='grep'
 GREP_ARGS=''

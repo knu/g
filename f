@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 type local >/dev/null 2>&1 || \
 local () {
