@@ -126,19 +126,32 @@ initialize () {
 }
 
 parse_opts () {
-    local opt
+    local opt arg OPTIND=1 OPTARG= OPTERR=
 
     echo 'local find_exclude_args find_include_args'
 
-    # ones after -P are FreeBSD extensions and ones after -r are GNU
-    # extensions.
-    while getopts "HLPEXdfsx-:" opt >/dev/null 2>&1; do
+    while :; do
+        # Stop if this argument looks like an operator
+        arg="$(eval echo :\$$OPTIND)"
+        case "$arg" in
+            :-[a-zA-Z]*)
+                arg="${arg%%[DO]*}"
+                expr "$arg" : ':-[HLPEXdfsx]*$' >/dev/null || break
+                ;;
+        esac
+
+        # ones after -P are FreeBSD extensions and ones after -D are
+        # GNU extensions.
+        getopts "HLPEXdfsxD:O:-:" opt >/dev/null 2>&1 || break
+
         case "$opt" in
             [?:])
                 break
                 ;;
             d)
-                sh_escape FIND_AFTER_ARGS="$FIND_AFTER_ARGS -depth"; echo
+                echo '
+                FIND_AFTER_ARGS=" -depth$FIND_AFTER_ARGS"
+                '
                 ;;
             -)
                 case "$OPTARG" in
@@ -214,9 +227,9 @@ parse_opts () {
     fi
     if [ -n "$find_exclude_args" ]; then
         if [ -n "$find_include_args" ]; then
-            FIND_AFTER_ARGS='\'' \( \('\''"$find_include_args"'\'' \) -o \('\''"$find_exclude_args"'\'' \) \) '\''"$FIND_AFTER_ARGS"
+            FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \( \('\''"$find_include_args"'\'' \) -o \('\''"$find_exclude_args"'\'' \) \)'\''
         else
-           FIND_AFTER_ARGS='\'' \('\''"$find_exclude_args"'\'' \)'\''"$FIND_AFTER_ARGS"
+           FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \('\''"$find_exclude_args"'\'' \)'\''
         fi
     fi
     '
