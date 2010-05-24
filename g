@@ -45,7 +45,8 @@ F_BEFORE_ARGS=''
 F_AFTER_ARGS=''
 
 XARGS_CMD='xargs'
-XARGS_ARGS='-0'
+XARGS_ARGS=-0
+FIND_PRINT=-print0
 
 if [ "$MYNAME" = g ]; then
     EXCLUDE_CVS=t
@@ -53,19 +54,17 @@ else
     EXCLUDE_CVS=
 fi
 
-type local >/dev/null 2>&1 || \
-local () {
-    for __arg__; do
-        case "$__arg__" in
-            *'='*)
-                eval "set $(sh_escape "$__arg__")"
-                ;;
-            *)
-                eval "set $(sh_escape "$__arg__")="
-                ;;
-        esac
-    done
-}
+case "$(uname -s)" in
+    SunOS)
+        type local >/dev/null 2>&1 || exec /usr/xpg4/bin/sh "$0" "$@"
+        awk () {
+            /usr/xpg4/bin/awk "$@"
+        }
+        GREP_CMD=/usr/xpg4/bin/grep
+        FIND_PRINT=-print
+        XARGS_ARGS=
+        ;;
+esac
 
 trap 'echo "g: error in find(1)." >&2; exit 2' USR1
 
@@ -196,7 +195,7 @@ sh_escape () {
 exec_find () {
     local args
 
-    eval "$(sh_escape "$F_CMD") $F_BEFORE_ARGS $(sh_escape "$@") $F_AFTER_ARGS -type f -print0" || kill -USR1 $$
+    eval "$(sh_escape "$F_CMD") $F_BEFORE_ARGS $(sh_escape "$@") $F_AFTER_ARGS -type f $FIND_PRINT" || kill -USR1 $$
     exit
 }
 

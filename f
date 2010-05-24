@@ -33,19 +33,16 @@
 MYNAME="$(basename "$0")"
 VERSION="0.1.2"
 
-type local >/dev/null 2>&1 || \
-local () {
-    for __arg__; do
-        case "$__arg__" in
-            *'='*)
-                eval "set $(sh_escape "$__arg__")"
-                ;;
-            *)
-                eval "set $(sh_escape "$__arg__")="
-                ;;
-        esac
-    done
-}
+case "$(uname -s)" in
+    SunOS)
+        type local >/dev/null 2>&1 || exec /usr/xpg4/bin/sh "$0" "$@"
+        awk () {
+            /usr/xpg4/bin/awk "$@"
+        }
+        ;;
+    *)
+        ;;
+esac
 
 main () {
     initialize
@@ -354,10 +351,10 @@ parse_args () {
         GNU)
             ;;
         FreeBSD)
-            : "${FIND_TARGETS:=" ."}"
+            : "${FIND_TARGETS:= .}"
             ;;
         *)
-            : "${FIND_TARGETS:=" ."}"
+            : "${FIND_TARGETS:= .}"
             if [ -z "$action" ]; then
                 FIND_AFTER_ARGS="$FIND_AFTER_ARGS -print"
             fi
