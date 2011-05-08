@@ -31,7 +31,7 @@
 # $Id$
 
 MYNAME="$(basename "$0")"
-VERSION="0.1.2"
+VERSION="0.5.0"
 
 case "$(uname -s)" in
     SunOS)
