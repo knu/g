@@ -237,17 +237,28 @@ parse_opts () {
 parse_args () {
     eval "$(parse_opts "$@")"
 
+    local includes
+
     while [ "$#" -gt 0 ]; do
         case "$1" in
             -*)
                 break
                 ;;
+            */)
+                FIND_TARGETS="$FIND_TARGETS $(sh_escape "$1")"
+                shift
+                ;;
             *)
                 FIND_TARGETS="$FIND_TARGETS $(sh_escape "$1")"
+                includes="$includes -path $(find_path_escape "$1") -o"
                 shift
                 ;;
         esac
     done
+
+    if [ -n "$includes" -a -n "$FIND_AFTER_ARGS" ]; then
+        FIND_AFTER_ARGS=" \($includes$FIND_AFTER_ARGS \)"
+    fi
 
     local action
     local op arg
@@ -370,6 +381,31 @@ sh_escape () {
                     n = ARGC - 1
                     for (i = 1; i <= n; i++) {
                         s = ARGV[i]
+                        gsub(/[^\nA-Za-z0-9_.,:\/@-]/, "\\\\&", s)
+                        gsub(/\n/, "\"\n\"", s)
+                        printf "%s", s
+                        if (i != n) printf " "
+                    }
+                    exit 0
+                }
+                ' "$@"
+            ;;
+        *)
+            printf '%s' "$*" 
+            ;;
+    esac
+}
+
+find_path_escape () {
+    case "$*" in
+        *[!A-Za-z0-9_.,:/@-]*)
+            awk '
+                BEGIN {
+                    n = ARGC - 1
+                    for (i = 1; i <= n; i++) {
+                        s = ARGV[i]
+                        gsub(/\/\/*$/, "", s)
+                        gsub(/[][*?]/, "\\\\&", s)
                         gsub(/[^\nA-Za-z0-9_.,:\/@-]/, "\\\\&", s)
                         gsub(/\n/, "\"\n\"", s)
                         printf "%s", s
