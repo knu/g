@@ -75,7 +75,7 @@ usage () {
         echo ""
         echo "g flags:"
         if [ "$EXCLUDE_CVS" = t ]; then
-            echo "    --no-cvs-exclude"
+            echo "    --all-files | --no-cvs-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
             echo "        uninteresting files in the same way rsync --cvs-exclude does."
         else
@@ -137,7 +137,7 @@ parse_opts () {
                                 EXCLUDE_CVS=t
                                 continue
                                 ;;
-                            no-cvs-exclude)
+                            all-files|no-cvs-exclude)
                                 EXCLUDE_CVS=
                                 continue
                                 ;;
@@ -204,7 +204,7 @@ main () {
     shift "$N_GREP_OPTS"
 
     if [ "$EXCLUDE_CVS" != t ]; then
-        F_BEFORE_ARGS="$F_BEFORE_ARGS --no-cvs-exclude"
+        F_BEFORE_ARGS="$F_BEFORE_ARGS --all-files"
     fi
 
     if [ "$#" -eq 0 ]; then

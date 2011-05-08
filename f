@@ -63,7 +63,7 @@ usage () {
         echo ""
         echo "f flags:"
         if [ -n "$EXCLUDE_CVS" ]; then
-            echo "    --no-cvs-exclude"
+            echo "    --all-files | --no-cvs-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
             echo "        uninteresting files in the same way rsync --cvs-exclude does."
         else
@@ -162,7 +162,7 @@ parse_opts () {
                     cvs-exclude)
                         echo EXCLUDE_CVS=t
                         ;;
-                    no-cvs-exclude)
+                    all-files|no-cvs-exclude)
                         echo EXCLUDE_CVS=
                         ;;
                     "include="*)
