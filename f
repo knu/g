@@ -86,7 +86,7 @@ usage () {
 
 initialize () {
     : "${FIND_CMD:=find}"
-    FIND_BEFORE_ARGS=''
+    FIND_BEFORE_ARGS=' -L'
     FIND_TARGETS=''
     FIND_AFTER_ARGS=''
     FIND_TYPE='SUSv3'
