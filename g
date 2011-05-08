@@ -77,10 +77,10 @@ usage () {
         if [ "$EXCLUDE_CVS" = t ]; then
             echo "    --all-files | --no-cvs-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
-            echo "        uninteresting files in the same way rsync --cvs-exclude does."
+            echo "        uninteresting files much like the way rsync --cvs-exclude does."
         else
             echo "    --cvs-exclude"
-            echo "        Ignore files in the same way rsync --cvs-exclude does."
+            echo "        Ignore files much like the way rsync --cvs-exclude does."
         fi
         echo "    --exclude=PATTERN"
         echo "        Ignore files matching PATTERN."

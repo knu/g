@@ -65,10 +65,10 @@ usage () {
         if [ -n "$EXCLUDE_CVS" ]; then
             echo "    --all-files | --no-cvs-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
-            echo "        uninteresting files in the same way rsync --cvs-exclude does."
+            echo "        uninteresting files much like the way rsync --cvs-exclude does."
         else
             echo "    --cvs-exclude"
-            echo "        Ignore files in the same way rsync --cvs-exclude does."
+            echo "        Ignore files much like the way rsync --cvs-exclude does."
         fi
         echo "    --exclude=PATTERN"
         echo "        Ignore files matching PATTERN."
@@ -210,16 +210,23 @@ parse_opts () {
 
     echo '
     if [ -n "$EXCLUDE_CVS" ]; then
-        find_exclude_args='\'' \! \( \( \
-            -name RCS -o -name SCCS -o -name CVS -o -name CVS.adm -o \
-            -name RCSLOG -o -name cvslog.\* -o -name tags -o -name TAGS -o \
-            -name .make.state -o -name .nse_depinfo -o -name \*\~ -o \
-            -name \#\* -o -name .\#\* -o -name ,\* -o -name _\$\* -o \
-            -name \*\$ -o -name \*.old -o -name \*.bak -o -name \*.BAK -o \
-            -name \*.orig -o -name \*.rej -o -name \*.del-\* -o -name \*.a -o \
-            -name \*.olb -o -name \*.o -o -name \*.obj -o -name \*.so -o \
-            -name \*.exe -o -name \*.Z -o -name \*.elc -o -name \*.ln -o \
-            -name core -o -name .svn -o -name .git -o -name .bzr -o -name .hg \
+        find_exclude_args='\'' \! \( \
+            -type f \( \
+              -name tags -o -name TAGS -o -name GTAGS -o \
+              -name GRTAGS -o -name GSYMS -o -name GPATH -o \
+              -name .make.state -o -name .nse_depinfo -o -name \*.ln -o \
+              -name \*\~ -o -name \#\* -o -name .\#\* -o -name ,\* -o -name _\$\* -o \
+              -name \*\$ -o -name \*.old -o -name \*.bak -o -name \*.BAK -o \
+              -name \*.orig -o -name \*.rej -o -name \*.del-\* -o \
+              -name \*.a -o -name \*.olb -o -name \*.o -o -name \*.obj -o \
+              -name \*.so -o -name \*.so.\* -a \! -name \*.so.\*\[\!.0-9\]\* -o \
+              -name \*.bundle -o -name \*.dylib -o -name \*.exe -o \
+              -name \*.Z -o -name \*.elc -o -name \*.pyo -o \
+              -name core -o -name core.\* -a \! -name core.\*\[\!0-9\]\* \
+            \) -o \
+            -type d \( \
+              -name RCS -o -name SCCS -o -name CVS -o -name CVS.adm -o \
+              -name .svn -o -name .git -o -name .bzr -o -name .hg \
             \) -prune \)'\''"$find_exclude_args"
     fi
     if [ -n "$find_exclude_args" ]; then
