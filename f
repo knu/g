@@ -2,7 +2,7 @@
 #
 # f - a wrapper around find(1)
 #
-# Copyright (c) 2009 Akinori MUSHA
+# Copyright (c) 2009, 2010, 2011 Akinori MUSHA
 #
 # All rights reserved.
 #

@@ -2,7 +2,7 @@
 #
 # g - a wrapper around grep(1) that uses f(1)
 #
-# Copyright (c) 2007, 2008, 2009 Akinori MUSHA
+# Copyright (c) 2007, 2008, 2009, 2010, 2011 Akinori MUSHA
 #
 # All rights reserved.
 #
