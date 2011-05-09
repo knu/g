@@ -218,7 +218,7 @@ parse_opts () {
               -name \*.a -o -name \*.olb -o -name \*.o -o -name \*.obj -o \
               -name \*.so -o -name \*.so.\* -a \! -name \*.so.\*\[\!.0-9\]\* -o \
               -name \*.bundle -o -name \*.dylib -o -name \*.exe -o \
-              -name \*.Z -o -name \*.elc -o -name \*.pyo -o \
+              -name \*.Z -o -name \*.elc -o -name \*.py\[co\] -o \
               -name core -o -name core.\* -a \! -name core.\*\[\!0-9\]\* \
             \) -o \
             -type d \( \
