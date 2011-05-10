@@ -83,7 +83,7 @@ usage () {
 
 initialize () {
     : "${FIND_CMD:=find}"
-    FIND_BEFORE_ARGS=' -L'
+    FIND_BEFORE_ARGS=''
     FIND_TARGETS=''
     FIND_AFTER_ARGS=''
     FIND_TYPE='SUSv3'
@@ -197,6 +197,20 @@ parse_opts () {
                         ;;
                 esac
                 ;;
+            L)
+                case "$FIND_TYPE" in
+                    GNU)
+                        echo '
+                        FIND_AFTER_ARGS="$FIND_AFTER_ARGS -follow"
+                        '
+                        ;;
+                    *)
+                        echo '
+                        FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS '"$(sh_escape "-$opt$OPTARG")"'"
+                        '
+                        ;;
+                esac
+                ;;
             *)
                 echo '
                 FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS '"$(sh_escape "-$opt$OPTARG")"'"
@@ -239,7 +253,7 @@ parse_opts () {
 }
 
 parse_args () {
-    eval "$(parse_opts "$@")"
+    eval "$(parse_opts -L "$@")"
 
     local includes
 
