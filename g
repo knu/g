@@ -38,7 +38,7 @@ GREP_BOPTS='EFGHIJLPRUVZabchilnoqrsuvwxz'
 N_GREP_OPTS=0
 
 F_CMD='f'
-F_BEFORE_ARGS=''
+F_BEFORE_ARGS=' -L'
 F_AFTER_ARGS=''
 
 XARGS_CMD='xargs'

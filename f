@@ -253,7 +253,6 @@ parse_opts () {
 }
 
 parse_args () {
-    set -- -L "$@"
     eval "$(parse_opts "$@")"
 
     local includes
