@@ -28,7 +28,7 @@
 # SUCH DAMAGE.
 
 MYNAME="$(basename "$0")"
-VERSION="0.5.0"
+VERSION="0.5.1"
 
 case "$(uname -s)" in
     SunOS)
