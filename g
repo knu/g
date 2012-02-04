@@ -2,7 +2,7 @@
 #
 # g - a wrapper around grep(1) that uses f(1)
 #
-# Copyright (c) 2007, 2008, 2009, 2010, 2011 Akinori MUSHA
+# Copyright (c) 2007, 2008, 2009, 2010, 2011, 2012 Akinori MUSHA
 #
 # All rights reserved.
 #
@@ -53,7 +53,20 @@ fi
 
 case "$(uname -s)" in
     SunOS)
-        type local >/dev/null 2>&1 || exec /usr/xpg4/bin/sh "$0" "$@"
+        test_local='f () { local x=2; [ "$x" = 2 ]; }; x=1; f && [ "$x" = 1 ]'
+        if ! eval "$test_local" >/dev/null 2>&1; then
+            case "$OS" in
+                sunos)
+                    for sh in /usr/gnu/bin/sh /usr/xpg4/bin/sh ksh; do
+                        if [ -x "$sh" ] && "$sh" -c "$test_local" >/dev/null 2>&1; then
+                            exec "$sh" "$0" "$@"
+                        fi
+                    done
+                    ;;
+            esac
+            echo "$0: 'local' builtin missing" >&1
+            exit 255
+        fi
         awk () {
             /usr/xpg4/bin/awk "$@"
         }
