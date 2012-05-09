@@ -55,15 +55,11 @@ case "$(uname -s)" in
     SunOS)
         test_local='f () { local x=2; [ "$x" = 2 ]; }; x=1; f && [ "$x" = 1 ]'
         if ! eval "$test_local" >/dev/null 2>&1; then
-            case "$OS" in
-                sunos)
-                    for sh in /usr/gnu/bin/sh /usr/xpg4/bin/sh ksh; do
-                        if [ -x "$sh" ] && "$sh" -c "$test_local" >/dev/null 2>&1; then
-                            exec "$sh" "$0" "$@"
-                        fi
-                    done
-                    ;;
-            esac
+            for sh in /usr/gnu/bin/sh /usr/xpg4/bin/sh ksh; do
+                if [ -x "$sh" ] && "$sh" -c "$test_local" >/dev/null 2>&1; then
+                    exec "$sh" "$0" "$@"
+                fi
+            done
             echo "$0: 'local' builtin missing" >&1
             exit 255
         fi
