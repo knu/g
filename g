@@ -105,7 +105,7 @@ usage () {
 }
 
 parse_opts () {
-    local opt_pattern opt_exptype opt arg
+    local OPTIND=1 opt_pattern opt_exptype opt arg
 
     if [ "$#" -eq 0 ]; then
         usage
