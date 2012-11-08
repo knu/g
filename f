@@ -103,7 +103,7 @@ initialize () {
         EXCLUDE_CVS=
     fi
 
-    local find_path="$(expr "$(type "$FIND_CMD")" : ".* is \(.*\)")"
+    local find_path="$(expr "$(type "$FIND_CMD")" : ".* \(/.*\)")"
 
     case "$find_path" in
         '')
