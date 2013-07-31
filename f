@@ -2,7 +2,7 @@
 #
 # f - a wrapper around find(1)
 #
-# Copyright (c) 2009, 2010, 2011, 2012 Akinori MUSHA
+# Copyright (c) 2009, 2010, 2011, 2012, 2013 Akinori MUSHA
 #
 # All rights reserved.
 #
@@ -68,13 +68,13 @@ usage () {
         echo "usage: $MYNAME { f_flags | find_flags } [ { file | directory } ... ] [ { expressions } ]"
         echo ""
         echo "f flags:"
-        if [ -n "$EXCLUDE_CVS" ]; then
-            echo "    --all-files | --no-cvs-exclude"
+        if [ -n "$EXCLUDE_RSYNC" ]; then
+            echo "    --A | --all-files | --no-rsync-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
-            echo "        uninteresting files much like the way rsync --cvs-exclude does."
+            echo "        uninteresting files much like a similar way rsync -C does."
         else
-            echo "    --cvs-exclude"
-            echo "        Ignore files much like the way rsync --cvs-exclude does."
+            echo "    --C | --rsync-exclude"
+            echo "        Ignore files much like a similar way rsync -C does."
         fi
         echo "    --exclude=PATTERN"
         echo "        Ignore files matching PATTERN."
@@ -98,9 +98,9 @@ initialize () {
     FIND_TYPE='SUSv3'
 
     if [ "$MYNAME" = f ]; then
-        EXCLUDE_CVS=t
+        EXCLUDE_RSYNC=t
     else
-        EXCLUDE_CVS=
+        EXCLUDE_RSYNC=
     fi
 
     local find_path="$(expr "$(type "$FIND_CMD")" : ".* \(/.*\)")"
@@ -165,11 +165,11 @@ parse_opts () {
                     debug)
                         echo DEBUG=t
                         ;;
-                    cvs-exclude)
-                        echo EXCLUDE_CVS=t
+                    C|rsync-exclude)
+                        echo EXCLUDE_RSYNC=t
                         ;;
-                    all-files|no-cvs-exclude)
-                        echo EXCLUDE_CVS=
+                    A|all-files|no-rsync-exclude)
+                        echo EXCLUDE_RSYNC=
                         ;;
                     "include="*)
                         echo '
@@ -229,7 +229,7 @@ parse_opts () {
     done
 
     echo '
-    if [ -n "$EXCLUDE_CVS" ]; then
+    if [ -n "$EXCLUDE_RSYNC" ]; then
         find_exclude_args='\'' \! \( \
             -type f \( \
               -name tags -o -name TAGS -o -name GTAGS -o \

@@ -2,7 +2,7 @@
 #
 # g - a wrapper around grep(1) that uses f(1)
 #
-# Copyright (c) 2007, 2008, 2009, 2010, 2011, 2012 Akinori MUSHA
+# Copyright (c) 2007, 2008, 2009, 2010, 2011, 2012, 2013 Akinori MUSHA
 #
 # All rights reserved.
 #
@@ -46,9 +46,9 @@ XARGS_ARGS=-0
 FIND_PRINT=-print0
 
 if [ "$MYNAME" = g ]; then
-    EXCLUDE_CVS=t
+    EXCLUDE_RSYNC=t
 else
-    EXCLUDE_CVS=
+    EXCLUDE_RSYNC=
 fi
 
 case "$(uname -s)" in
@@ -80,13 +80,13 @@ usage () {
         echo "usage: $MYNAME { g_flags | grep_flags } [ { file | directory } ... ]"
         echo ""
         echo "g flags:"
-        if [ "$EXCLUDE_CVS" = t ]; then
-            echo "    --all-files | --no-cvs-exclude"
+        if [ "$EXCLUDE_RSYNC" = t ]; then
+            echo "    --A | --all-files | --no-rsync-exclude"
             echo "        Do not auto-ignore any files.  By default, $MYNAME ignores"
-            echo "        uninteresting files much like the way rsync --cvs-exclude does."
+            echo "        uninteresting files much like a similar way rsync -C does."
         else
-            echo "    --cvs-exclude"
-            echo "        Ignore files much like the way rsync --cvs-exclude does."
+            echo "    --C | --rsync-exclude"
+            echo "        Ignore files much like a similar way rsync -C does."
         fi
         echo "    --exclude=PATTERN"
         echo "        Ignore files matching PATTERN."
@@ -139,12 +139,12 @@ parse_opts () {
                             help)
                                 usage
                                 ;;
-                            cvs-exclude)
-                                EXCLUDE_CVS=t
+                            C|rsync-exclude)
+                                EXCLUDE_RSYNC=t
                                 continue
                                 ;;
-                            all-files|no-cvs-exclude)
-                                EXCLUDE_CVS=
+                            A|all-files|no-rsync-exclude)
+                                EXCLUDE_RSYNC=
                                 continue
                                 ;;
                             "include="*|"include-dir="*|"exclude="*|"exclude-dir="*)
@@ -209,7 +209,7 @@ main () {
     parse_opts "$@"
     shift "$N_GREP_OPTS"
 
-    if [ "$EXCLUDE_CVS" != t ]; then
+    if [ "$EXCLUDE_RSYNC" != t ]; then
         F_BEFORE_ARGS="$F_BEFORE_ARGS --all-files"
     fi
 
