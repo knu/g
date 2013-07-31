@@ -88,13 +88,13 @@ usage () {
             echo "    --C | --rsync-exclude"
             echo "        Ignore files much like a similar way rsync -C does."
         fi
-        echo "    --exclude=PATTERN"
+        echo "    --exclude=PATTERN | --X=PATTERN"
         echo "        Ignore files matching PATTERN."
         echo "    --exclude-dir=PATTERN"
         echo "        Ignore directories matching PATTERN."
-        echo "    --find-expr=EXPR"
+        echo "    --e=EXPR | --find-expr=EXPR"
         echo "        Specify expressions to pass to find(1)."
-        echo "    --include=PATTERN"
+        echo "    --include=PATTERN | -I=PATTERN"
         echo "        Do not ignore files matching PATTERN."
         echo "    --include-dir=PATTERN"
         echo "        Do not ignore directories matching PATTERN."
@@ -105,13 +105,24 @@ usage () {
 }
 
 parse_opts () {
-    local OPTIND=1 opt_pattern opt_exptype opt arg
+    local OPTIND=1 argc parseoptlong opt_pattern opt_exptype opt arg
 
-    if [ "$#" -eq 0 ]; then
+    if [ $# -eq 0 ]; then
         usage
     fi
+    argc=$#
+
+    parseoptlong=`parseoptlong \
+        help debug \
+        C rsync-exclude \
+        A no-rsync-exclude all-files \
+        I: include: include-dir: \
+        X: exclude: exclude-dir: \
+        e: find-expr: \
+    opt`
 
     while getopts "$GREP_AOPTS$GREP_BOPTS" opt; do
+        eval "$parseoptlong"
         case "$opt" in
             ["$GREP_BOPTS"])
                 case "$opt" in
@@ -122,43 +133,30 @@ parse_opts () {
 
                 GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt")"
                 ;;
+            e)
+                opt_pattern=t
+                GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt$OPTARG")"
+                ;;
+            -help)
+                usage
+                ;;
+            -C|-rsync-exclude)
+                EXCLUDE_RSYNC=t
+                ;;
+            -A|-all-files|-no-rsync-exclude)
+                EXCLUDE_RSYNC=
+                ;;
+            -I|-include|-include-dir|-X|-exclude|-exclude-dir)
+                F_BEFORE_ARGS="$F_BEFORE_ARGS $(sh_escape "-$opt=$OPTARG")"
+                ;;
+            -e|-find-expr)
+                F_AFTER_ARGS="$F_AFTER_ARGS '(' $(sh_escape "$OPTARG") ')'"
+                ;;
             [?:])
                 # cause error
                 usage
                 ;;
             *)
-                case "$opt" in
-                    e)
-                        opt_pattern=t
-                        ;;
-                    [EFP])
-                        opt_exptype=t
-                        ;;
-                    -)
-                        case "$OPTARG" in
-                            help)
-                                usage
-                                ;;
-                            C|rsync-exclude)
-                                EXCLUDE_RSYNC=t
-                                continue
-                                ;;
-                            A|all-files|no-rsync-exclude)
-                                EXCLUDE_RSYNC=
-                                continue
-                                ;;
-                            "include="*|"include-dir="*|"exclude="*|"exclude-dir="*)
-                                F_BEFORE_ARGS="$F_BEFORE_ARGS $(sh_escape "-$opt$OPTARG")"
-                                continue
-                                ;;
-                            "find-expr="*)
-                                F_AFTER_ARGS="$F_AFTER_ARGS '(' $(sh_escape $(expr "$OPTARG" : "[^=]*=\(.*\)")) ')'"
-                                continue
-                                ;;
-                        esac
-                        ;;
-                esac
-
                 GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt$OPTARG")"
                 ;;
         esac
@@ -166,13 +164,16 @@ parse_opts () {
 
     [ $opt_exptype ] || GREP_ARGS="$GREP_ARGS -E"
 
+    shift $((OPTIND-1))
+
     if [ -z "$opt_pattern" ]; then
-        N_GREP_OPTS="$OPTIND"
-        shift "$(($OPTIND - 1))"
+        if [ $# -eq 0 ]; then
+            usage
+        fi
         GREP_ARGS="$GREP_ARGS -- $(sh_escape "$1")"
-    else
-        N_GREP_OPTS="$(($OPTIND - 1))"
+        shift
     fi
+    N_GREP_OPTS=$((argc-$#))
 }
 
 sh_escape () {
@@ -196,6 +197,161 @@ sh_escape () {
             printf '%s' "$*" 
             ;;
     esac
+}
+
+parseoptlong () {
+    local carp=t error
+
+    if [ "$1" = : ]; then
+        unset carp
+        shift
+    fi
+
+    case $# in
+        0)
+            echo 'getoptslong: not enough arguments' >&2
+            return 1 ;;
+        1)
+            return 0 ;;
+    esac
+
+    local option name="$(shift $(($#-1)) && echo "$1")" when booloptions= margoptions= oargoptions=
+
+    echo "\
+[ \"\$$name\" != - ] ||
+case \"\$(shift \$((OPTIND-2)) && echo \".\$1\")\" in
+.--*)
+ case \"\$OPTARG\" in"
+
+    while [ $# -gt 1 ]; do
+        case "$1" in
+            *\=*)
+                option="${1%%=*}"
+                oargoptions="$oargoptions $option"
+                # --optarg => return default value
+                echo "\
+ $option)
+  $name=\"-\$OPTARG\"
+  OPTARG=\"${1#*=}\"
+  [ -n \"\$OPTARG\" ] || unset OPTARG ;;"
+                ;;
+            *:)
+                margoptions="$margoptions ${1%:}"
+                ;;
+            *)
+                booloptions="$booloptions $1"
+                ;;
+        esac
+        shift
+    done
+
+    # --bool => return null argument
+    if [ -n "$booloptions" ]; then
+        when=
+        for option in $booloptions; do
+            when="$when|$option"
+        done
+        echo "\
+ ${when#"|"})
+  $name=\"-\$OPTARG\"
+  unset OPTARG ;;"
+    fi
+
+    # --bool=arg => fail
+    if [ -n "$booloptions" ]; then
+        when=
+        for option in $booloptions; do
+            when="$when|$option\=*"
+        done
+        if [ -n "$carp" ]; then
+            echo "\
+ ${when#"|"})
+  $name='?'
+  echo \"\$0: option does not take an argument -- \${OPTARG%%=*}\" >&2
+  unset OPTARG ;;"
+        else
+            echo "\
+ ${when#"|"})
+  $name='?'
+  OPTARG=\"\${OPTARG%%=*}\" ;;"
+        fi
+    fi
+
+    # --mandarg=arg | --optarg=arg => return arg
+    if [ -n "$margoptions$oargoptions" ]; then
+        when=
+        for option in $margoptions $oargoptions; do
+            when="$when|$option\=*"
+        done
+        echo "\
+ ${when#"|"})
+  $name=\"-\${OPTARG%%=*}\"
+  OPTARG=\"\${OPTARG#*=}\" ;;"
+    fi
+
+    # --mandarg arg => return arg or fail if missing
+    if [ -n "$margoptions" ]; then
+        when=
+        for option in $margoptions; do
+            when="$when|$option"
+        done
+        # Altering OPTIND works for some shells like bash, but does
+        # not work for shells that store the current index in an
+        # internal space.  Shifting is the only way to let getopts
+        # continue parsing correctly on those shells.
+        echo "\
+ ${when#"|"})
+  if [ \$# -ge \$OPTIND ]; then
+   $name=\"-\$OPTARG\"
+   shift \$((OPTIND-1))
+   OPTARG=\"\$1\"
+   shift
+   OPTIND=1
+  else"
+        if [ -n "$carp" ]; then
+            echo "\
+   echo \"\$0: option requires an argument -- \$OPTARG\" >&2
+   $name='?'
+   unset OPTARG"
+        else
+            echo "\
+   $name=:"
+        fi
+        echo "\
+  fi ;;"
+    fi
+
+    if [ -n "$carp" ]; then
+        echo "\
+ *)
+  echo \"\$0: illegal option -- \${OPTARG%%=*}\" >&2
+  $name='?'
+  unset OPTARG ;;"
+    else
+        echo "\
+ *)
+  $name='?'
+  OPTARG=\"\${OPTARG%%=*}\" ;;"
+    fi
+
+    echo "\
+ esac ;;
+*)"
+
+    if [ -n "$carp" ]; then
+        echo "\
+ echo \"\$0: illegal option -- \$$name\" >&2
+ $name='?'
+ unset OPTARG"
+    else
+        echo "\
+ OPTARG=\"\$$name\"
+ $name='?'"
+    fi
+
+    echo "\
+ ;;
+esac"
 }
 
 exec_find () {
