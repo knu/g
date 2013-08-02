@@ -178,6 +178,9 @@ parse_opts () {
 
 sh_escape () {
     case "$*" in
+        '')
+            echo "''"
+            ;;
         *[!A-Za-z0-9_.,:/@-]*)
             awk '
                 BEGIN {
