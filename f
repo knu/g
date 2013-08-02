@@ -125,6 +125,14 @@ initialize () {
             ;;
     esac
 
+    if [ GNU = "$FIND_TYPE" ]; then
+        local version="$(expr "$("$find_path" --version)" : '.*GNU.* \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)')"
+        # GNU find >=4.2.5 has support for -L
+        if [ "$((1000000*${version%%.*}+1000*$(expr "$version" : '[0-9][0-9]*\.\([0-9][0-9]*\)')+$(expr "$version" : '[0-9][0-9]*\.[0-9][0-9]*\.\([0-9][0-9]*\)')))" -lt 4002005 ]; then
+            FIND_TYPE=GNUold
+        fi
+    fi
+
     FIND_CMD="$find_path"
 }
 
@@ -190,11 +198,11 @@ parse_opts () {
                 ;;
             L)
                 case "$FIND_TYPE" in
-                    GNU)
+                    GNUold)
                         echo 'FIND_AFTER_ARGS="$FIND_AFTER_ARGS -follow"'
                         ;;
                     *)
-                        echo 'FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS '"$(sh_escape "-$opt$OPTARG")"'"'
+                        echo 'FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS -L"'
                         ;;
                 esac
                 ;;
@@ -363,14 +371,12 @@ parse_args () {
         esac
     done
 
+    : "${FIND_TARGETS:= .}"
+
     case "$FIND_TYPE" in
-        GNU)
-            ;;
-        FreeBSD)
-            : "${FIND_TARGETS:= .}"
+        GNU*|FreeBSD)
             ;;
         *)
-            : "${FIND_TARGETS:= .}"
             if [ -z "$action" ]; then
                 FIND_AFTER_ARGS="$FIND_AFTER_ARGS -print"
             fi
