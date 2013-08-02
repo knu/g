@@ -313,14 +313,16 @@ parse_args () {
                         case "$arg" in
                             '{}')
                                 has_braces=t
-                                ;;
-                            '+')
-                                if [ "$op" = -exec ]; then
-                                    if [ "$has_braces" = t ]; then
-                                        is_ok=t
-                                    fi
-                                    break
-                                fi
+                                case "$op" in
+                                    -exec|-execdir)
+                                        if [ + = "$1" ]; then
+                                            FIND_AFTER_ARGS="$FIND_AFTER_ARGS $(sh_escape "$1")"
+                                            shift
+                                            is_ok=t
+                                            break
+                                        fi
+                                        ;;
+                                esac
                                 ;;
                             ';')
                                 is_ok=t
