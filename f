@@ -97,7 +97,7 @@ initialize () {
     FIND_AFTER_ARGS=''
     FIND_TYPE='SUSv3'
 
-    if [ "$MYNAME" = f ]; then
+    if [ f = "$MYNAME" ]; then
         EXCLUDE_RSYNC=t
     else
         EXCLUDE_RSYNC=
@@ -229,7 +229,7 @@ parse_opts () {
         if [ -n "$find_include_args" ]; then
             FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \( \('\''"$find_include_args"'\'' \) -o \('\''"$find_exclude_args"'\'' \) \)'\''
         else
-           FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \('\''"$find_exclude_args"'\'' \)'\''
+            FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \('\''"$find_exclude_args"'\'' \)'\''
         fi
     fi
     '
@@ -242,7 +242,7 @@ parse_args () {
 
     local includes
 
-    while [ "$#" -gt 0 ]; do
+    while [ $# -gt 0 ]; do
         case "$1" in
             -*)
                 break
@@ -266,7 +266,7 @@ parse_args () {
     local action
     local op arg
 
-    while [ "$#" -gt 0 ]; do
+    while [ $# -gt 0 ]; do
         op="$1"; shift
 
         case "$op" in
@@ -282,7 +282,7 @@ parse_args () {
                 ;;
             -depth)
                 # FreeBSD's find(1) takes an optional numeric argument.
-                if [ "$#" -gt 0 ]; then
+                if [ $# -gt 0 ]; then
                     case "$1" in
                         [0-9]*)
                             FIND_AFTER_ARGS="$FIND_AFTER_ARGS -$op $(sh_escape "$1")"
@@ -294,7 +294,7 @@ parse_args () {
             # unary operators ones after -[Bacm]min are FreeBSD
             # extensions and ones after -wholename are GNU extensions.
             -name|-perm|-type|-links|-user|-group|-size|-[acm]time|-newer|-[Bacm]min|-[Bacm]newer|-[B]time|-flags|-fstype|-iname|-inum|-ipath|-iregex|-maxdepth|-mindepth|-newer[Bacm][Bacmt]|-path|-regex|-wholename|-iwholename|-regextype|-lname|-ilname|-samefile|-used|-xtype|-uid|-gid|-readable|-writable|-executable|-true|-false)
-                if [ "$#" -lt 1 ]; then
+                if [ $# -lt 1 ]; then
                     info "missing argument to \`$op'"
                     return 64
                 fi
@@ -305,9 +305,9 @@ parse_args () {
             -exec|-ok|-execdir|-okdir)
                 action="$op"
                 local is_ok has_braces
-                if [ "$#" -ge 2 ]; then
+                if [ $# -ge 2 ]; then
                     FIND_AFTER_ARGS="$FIND_AFTER_ARGS $op"
-                    while [ "$#" -gt 0 ]; do
+                    while [ $# -gt 0 ]; do
                         arg="$1"; shift
                         FIND_AFTER_ARGS="$FIND_AFTER_ARGS $(sh_escape "$arg")"
                         case "$arg" in
@@ -329,7 +329,7 @@ parse_args () {
                         esac
                     done
                 fi
-                if [ "$is_ok" != t ]; then
+                if [ t != "$is_ok" ]; then
                     info "missing argument to \`$op'"
                 fi
                 ;;
@@ -341,7 +341,7 @@ parse_args () {
             # actions: unary operators; GNU extensions.
             -fprint|-fprint0|-fls|-printf)
                 action="$op"
-                if [ "$#" -lt 1 ]; then
+                if [ $# -lt 1 ]; then
                     info "missing argument to \`$op'"
                     return 64
                 fi
@@ -351,7 +351,7 @@ parse_args () {
             # actions: binary operators; GNU extensions.
             -fprintf)
                 action="$op"
-                if [ "$#" -lt 2 ]; then
+                if [ $# -lt 2 ]; then
                     info "missing argument to \`$op'"
                     return 64
                 fi
@@ -394,7 +394,7 @@ sh_escape () {
                 ' "$@"
             ;;
         *)
-            printf '%s' "$*" 
+            printf '%s' "$*"
             ;;
     esac
 }
@@ -402,7 +402,7 @@ sh_escape () {
 parseoptlong () {
     local carp=t error
 
-    if [ "$1" = : ]; then
+    if [ : = "$1" ]; then
         unset carp
         shift
     fi
@@ -574,7 +574,7 @@ find_path_escape () {
                 ' "$@"
             ;;
         *)
-            printf '%s' "$*" 
+            printf '%s' "$*"
             ;;
     esac
 }
