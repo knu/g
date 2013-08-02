@@ -55,11 +55,50 @@ main () {
 
     parse_args "$@" || exit
 
-    if [ "$DEBUG" = t ]; then
-        info "executing the following command:
-	$FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_AFTER_ARGS"
+    local maxlength="$(getconf ARG_MAX)" target etarget etargets expr exprs cmdline ncmdline
+
+    if [ ${maxlength} -ge 65536 ]; then
+        # Avoid using a huge limit value that will slow down the whole process.
+        maxlength=4096
+    else
+        # Be strict in a poor environment.
+        maxlength=$((4096-$(env | wc -c)))
     fi
-    eval "exec $FIND_CMD$FIND_BEFORE_ARGS$FIND_TARGETS$FIND_AFTER_ARGS"
+
+    eval "set -- $FIND_TARGETS"
+
+    for target; do
+        etarget=" $(sh_escape "$target")"
+
+        case "$target" in
+            */)
+                expr=
+                ;;
+            *)
+                expr=" -path $(find_path_escape "$target") -o"
+                ;;
+        esac
+
+        ncmdline="$FIND_CMD$FIND_BEFORE_ARGS$etarget$etargets $FIND_OPTION_ARGS\\($expr$exprs$FIND_PATTERN_ARGS \\)$FIND_AFTER_ARGS"
+
+        if [ ${#ncmdline} -gt $maxlength ]; then
+            if [ -z "$cmdline" ]; then
+                info "command line too long"
+                exit 1
+            fi
+            eval "${DEBUG:+"set -x;"}$cmdline${DEBUG:+";set +x"}"
+            exprs="$expr"
+            etargets="$etarget"
+            cmdline="$FIND_CMD$FIND_BEFORE_ARGS$etarget $FIND_OPTION_ARGS\\($expr$FIND_PATTERN_ARGS \\)$FIND_AFTER_ARGS"
+        else
+            exprs="$expr$exprs"
+            etargets="$etarget$etargets"
+            cmdline="$ncmdline"
+        fi
+    done
+    if [ -n "$cmdline" ]; then
+        eval "${DEBUG:+"set -x;"}exec $cmdline"
+    fi
 }
 
 usage () {
@@ -94,6 +133,8 @@ initialize () {
     : "${FIND_CMD:=find}"
     FIND_BEFORE_ARGS=''
     FIND_TARGETS=''
+    FIND_OPTION_ARGS=''
+    FIND_PATTERN_ARGS=''
     FIND_AFTER_ARGS=''
     FIND_TYPE='SUSv3'
 
@@ -169,7 +210,7 @@ parse_opts () {
                 break
                 ;;
             d)
-                echo 'FIND_AFTER_ARGS=" -depth$FIND_AFTER_ARGS"'
+                echo 'FIND_OPTION_ARGS="$FIND_OPTION_ARGS -depth"'
                 ;;
             -help)
                 echo usage
@@ -199,7 +240,7 @@ parse_opts () {
             L)
                 case "$FIND_TYPE" in
                     GNUold)
-                        echo 'FIND_AFTER_ARGS="$FIND_AFTER_ARGS -follow"'
+                        echo 'FIND_OPTION_ARGS="$FIND_OPTION_ARGS -follow"'
                         ;;
                     *)
                         echo 'FIND_BEFORE_ARGS="$FIND_BEFORE_ARGS -L"'
@@ -235,10 +276,12 @@ parse_opts () {
     fi
     if [ -n "$find_exclude_args" ]; then
         if [ -n "$find_include_args" ]; then
-            FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \( \('\''"$find_include_args"'\'' \) -o \('\''"$find_exclude_args"'\'' \) \)'\''
+            FIND_PATTERN_ARGS=" \\( \\($find_include_args \\) -o $find_exclude_args \\)"
         else
-            FIND_AFTER_ARGS="$FIND_AFTER_ARGS"'\'' \('\''"$find_exclude_args"'\'' \)'\''
+            FIND_PATTERN_ARGS=" $find_exclude_args"
         fi
+    else
+        FIND_PATTERN_ARGS=' \! -path ""'
     fi
     '
 
@@ -255,21 +298,12 @@ parse_args () {
             -*)
                 break
                 ;;
-            */)
-                FIND_TARGETS="$FIND_TARGETS $(sh_escape "$1")"
-                shift
-                ;;
             *)
                 FIND_TARGETS="$FIND_TARGETS $(sh_escape "$1")"
-                includes="$includes -path $(find_path_escape "$1") -o"
                 shift
                 ;;
         esac
     done
-
-    if [ -n "$includes" -a -n "$FIND_AFTER_ARGS" ]; then
-        FIND_AFTER_ARGS=" \($includes$FIND_AFTER_ARGS \)"
-    fi
 
     local action
     local op arg
