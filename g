@@ -112,7 +112,7 @@ parse_opts () {
     fi
     argc=$#
 
-    parseoptlong=`parseoptlong \
+    parseoptlong=`parseoptlong : \
         help debug \
         C rsync-exclude \
         A no-rsync-exclude all-files \
@@ -152,12 +152,20 @@ parse_opts () {
             -e|-find-expr)
                 F_AFTER_ARGS="$F_AFTER_ARGS '(' $(sh_escape "$OPTARG") ')'"
                 ;;
-            [?:])
-                # cause error
+            -*)
+                GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt${OPTARG+"=$OPTARG"}")"
+                ;;
+            :)
+                echo "$0: option requires an argument -- $OPTARG" >&2
                 usage
                 ;;
-            *)
-                GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt$OPTARG")"
+            \?)
+                if [ -n "$OPTARG" ]; then
+                    GREP_ARGS="$GREP_ARGS $(sh_escape "--$OPTARG")"
+                else
+                    echo "$0: illegal option -- $OPTARG" >&2
+                    usage
+                fi
                 ;;
         esac
     done
