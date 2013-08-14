@@ -137,6 +137,9 @@ parse_opts () {
                 opt_pattern=t
                 GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt$OPTARG")"
                 ;;
+            ["$GREP_AOPTS"])
+                GREP_ARGS="$GREP_ARGS $(sh_escape "-$opt${OPTARG}")"
+                ;;
             -help)
                 usage
                 ;;
