@@ -281,7 +281,7 @@ parse_opts () {
             FIND_PATTERN_ARGS=" $find_exclude_args"
         fi
     else
-        FIND_PATTERN_ARGS=' \! -path ""'
+        FIND_PATTERN_ARGS='\'' \! -path ""'\''
     fi
     '
 
@@ -320,7 +320,7 @@ parse_args () {
             # nonary operators; ones after -acl are FreeBSD extensions
             # and ones after -follow are GNU extensions.
             -nouser|-nogroup|-xdev|-prune|-acl|-empty|-prune|-follow|-daystart|-quit|-noleaf|-ignore_readdir_race|-noignore_readdir_race|-mount|-true)
-                FIND_AFTER_ARGS="$FIND_AFTER_ARGS $op)"
+                FIND_AFTER_ARGS="$FIND_AFTER_ARGS $op"
                 ;;
             -depth)
                 # FreeBSD's find(1) takes an optional numeric argument.
