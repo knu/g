@@ -460,10 +460,10 @@ parseoptlong () {
             return 0 ;;
     esac
 
-    local option name="$(shift $(($#-1)) && echo "$1")" when booloptions= margoptions= oargoptions=
+    local option name="$(shift $(($#-1)) && printf %s "$1")" when booloptions= margoptions= oargoptions=
 
     echo "\
-[ \"\$$name\" != - ] ||
+[ - != \"\$$name\" ] ||
 case \"\$(shift \$((OPTIND-2)) && echo \".\$1\")\" in
 .--*)
  case \"\$OPTARG\" in"
@@ -575,8 +575,7 @@ case \"\$(shift \$((OPTIND-2)) && echo \".\$1\")\" in
     else
         echo "\
  *)
-  $name='?'
-  OPTARG=\"\${OPTARG%%=*}\" ;;"
+  $name='?' ;;"
     fi
 
     echo "\
